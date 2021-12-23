@@ -27,7 +27,10 @@ async def play(ctx, *, haku : str):
     try:
         voice_channel = ctx.author.voice.channel
         await voice_channel.connect()
-    except AttributeError: await ctx.send("Käyttäjä ei ole puhekanavalla")
+    except AttributeError:
+        await ctx.send("Sinun on liityttävä puhekanavalle")
+        return
+    except: pass
     voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
 
     ydl_opts = {
@@ -39,53 +42,63 @@ async def play(ctx, *, haku : str):
         }],
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(search(haku))
-        await ctx.send(info['duration'])
-        if info['duration'] > 600:
+        video = search(haku)
+        info_dict = ydl.extract_info(video, download=False)
+        video_title = info_dict.get('title', None)
+        duration = info_dict.get('duration', None)
+        await ctx.send(duration)
+        if duration > 1200:
+            await ctx.send(":MullaEiOlePaitaa:")
             return
-        else:
-            ydl.download([search(haku)])
-            for file in os.listdir("./"):
-                if (file.endswith(".mp3")) and not (file.startswith("bababooey")):
-                    await ctx.send("Nyt bängää: " + file.rpartition(".")[0].rpartition("[")[0])
-                    os.rename(file, "song.mp3")
+        ydl.download(video)
+        await ctx.send("Nyt bängää: " + video_title)
 
-            voice.play(discord.FFmpegPCMAudio('song.mp3'))
+
+    for file in os.listdir("./"):
+        if (file.endswith(".mp3")) and not (file.startswith("bababooey")):
+            os.rename(file, "song.mp3")
+
+    voice.play(discord.FFmpegPCMAudio('song.mp3'))
 
 @client.command()
 async def leave(ctx):
-    voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
-    try: voice.stop()
-    except: print()
+    try:
+        voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
+        try: voice.stop()
+        except: pass
 
-    
-    voice.play(discord.FFmpegPCMAudio('bababooey.mp3'))
-    time.sleep(1)
-    if voice.is_connected():
-        await voice.disconnect()
-    else:
-        await ctx.send("bruh.")
+        voice.play(discord.FFmpegPCMAudio('bababooey.mp3'))
+        time.sleep(1)
+
+        if voice.is_connected():
+            await voice.disconnect()
+        else:
+            await ctx.send("bruh")
+    except Exception: await ctx.send("bruh en ole edes puhekanavalla")
 
 @client.command()
 async def pause(ctx):
-    voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
-    if voice.is_playing():
+    try:
+        voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
         voice.pause()
-    else:
+    except:
         await ctx.send("Ei soi mitään veli")
 
 @client.command()
 async def resume(ctx):
-    voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
-    if voice.is_paused():
+    try:
+        voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
         voice.resume()
-    else:
+    except:
         await ctx.send("your mom gay")
 
 @client.command()
 async def stop(ctx):
-    voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
-    voice.stop()
+    try:
+        voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
+        voice.stop()
+    except:
+        await ctx.send("ei soi mitään veli")
 
 
 
